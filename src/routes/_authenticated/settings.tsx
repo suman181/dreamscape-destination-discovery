@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/Clock";
-import { displayName } from "@/lib/user";
+import { displayName, meta } from "@/lib/user";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -41,11 +41,11 @@ function Toggle({ title, desc, initial = true }: { title: string; desc: string; 
 function SettingsPage() {
   const { user } = Route.useRouteContext();
   const router = useRouter();
-  const m = user.user_metadata ?? {};
+  
   const [tab, setTab] = useState("account");
-  const [fullName, setFullName] = useState<string>(m.full_name || m.name || "");
+  const [fullName, setFullName] = useState<string>(meta(user, "full_name") || meta(user, "name"));
   const [nick, setNick] = useState<string>(displayName(user));
-  const [phone, setPhone] = useState<string>(m.phone || "");
+  const [phone, setPhone] = useState<string>(meta(user, "phone"));
   const [saving, setSaving] = useState(false);
   const initial = (nick || "U").charAt(0).toUpperCase();
   const since = new Date(user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" });
@@ -54,7 +54,7 @@ function SettingsPage() {
     setSaving(true);
     const { error } = await supabase.auth.updateUser({ data: { full_name: fullName, display_name: nick, phone } });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Your changes are saved");
     router.invalidate();
   }
